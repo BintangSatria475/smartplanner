@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#10231f">
+    <title>Smart Kantin Planner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <aside class="sidebar">
+        <a class="brand" href="#dashboard">
+            <span class="brand-icon">🍽️</span>
+            <span><strong>Smart Kantin</strong><small>PLANNER</small></span>
+        </a>
+
+        <div class="nav-label">MENU UTAMA</div>
+        <nav class="navigation">
+            <a href="#dashboard" class="nav-link active"><span>▦</span> Dashboard</a>
+            <a href="#menu"><span>＋</span> Manajemen Menu</a>
+            <a href="#stok"><span>▤</span> Manajemen Stok</a>
+            <a href="#rekomendasi"><span>✦</span> Rekomendasi</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="sidebar-mark">SP</div>
+            <div><strong>Smart Kantin Planner</strong><small>Version 1.0</small></div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">OVERVIEW</p>
+                <h1>Dashboard</h1>
+                <p class="welcome">Selamat datang kembali! Berikut ringkasan kantin Anda.</p>
+            </div>
+            <div class="profile">
+                <div class="avatar">A</div>
+                <div><strong>Admin Kantin</strong><small>Administrator</small></div>
+            </div>
+        </header>
+
+        <section id="dashboard" class="dashboard-section">
+            <div class="section-heading">
+                <div><p class="eyebrow">RINGKASAN</p><h2>Ringkasan Kantin</h2></div>
+                <span class="date-chip">● Sistem aktif</span>
+            </div>
+
+            <div class="stats">
+                <article class="stat-card">
+                    <div class="stat-top"><span class="stat-icon purple">▣</span><span class="stat-caption">KESELURUHAN</span></div>
+                    <p>Total Menu</p><h3>{{ total_menu }}</h3><small>Menu terdaftar</small>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-top"><span class="stat-icon orange">🍱</span><span class="stat-caption">KATEGORI</span></div>
+                    <p>Total Makanan</p><h3>{{ total_makanan }}</h3><small>Jenis makanan</small>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-top"><span class="stat-icon blue">▤</span><span class="stat-caption">PERSEDIAAN</span></div>
+                    <p>Total Stok</p><h3>{{ total_stok }}</h3><small>Item dalam stok</small>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-top"><span class="stat-icon green">✦</span><span class="stat-caption">SIAP DIJUAL</span></div>
+                    <p>Menu Tersedia</p><h3>{{ rekomendasi|length }}</h3><small>Menu dengan stok tersedia</small>
+                </article>
+            </div>
+        </section>
+
+        <section id="menu" class="panel">
+            <div class="panel-heading">
+                <div><p class="eyebrow">KATALOG</p><h2>Tambah Menu Kantin</h2><p class="panel-description">Masukkan informasi menu baru ke dalam daftar kantin.</p></div>
+                <span class="heading-icon">＋</span>
+            </div>
+            <form action="{{ url_for('tambah') }}" method="POST" class="menu-form">
+                <label>Nama menu<input type="text" name="nama" placeholder="Contoh: Nasi Goreng" required></label>
+                <label>Kategori<select name="kategori" required><option value="Makanan">Makanan</option><option value="Minuman">Minuman</option></select></label>
+                <label>Harga (Rp)<input type="number" name="harga" placeholder="15000" min="0" required></label>
+                <label>Jumlah stok<input type="number" name="stok" placeholder="20" min="0" required></label>
+                <button type="submit" class="primary-button">＋ Tambah Menu</button>
+            </form>
+        </section>
+
+        <section id="stok" class="panel">
+            <div class="panel-heading table-heading">
+                <div><p class="eyebrow">INVENTARIS</p><h2>Daftar Menu dan Stok</h2><p class="panel-description">Pantau ketersediaan dan perbarui stok menu kantin.</p></div>
+                <span class="count-chip">{{ total_menu }} menu</span>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>NO</th><th>NAMA MENU</th><th>KATEGORI</th><th>HARGA</th><th>STOK</th><th>STATUS</th><th>AKSI</th></tr></thead>
+                    <tbody>
+                    {% for menu in menus %}
+                        <tr>
+                            <td class="number-cell">{{ loop.index }}</td>
+                            <td><strong class="menu-name">{{ menu.nama }}</strong></td>
+                            <td><span class="category-pill">{{ menu.kategori }}</span></td>
+                            <td class="price-cell">Rp {{ "{:,.0f}".format(menu.harga).replace(",", ".") }}</td>
+                            <td>
+                                <form action="{{ url_for('update_stok', id=menu.id) }}" method="POST" class="stock-form">
+                                    <input type="number" name="stok" value="{{ menu.stok }}" min="0" aria-label="Stok {{ menu.nama }}" required>
+                                    <button type="submit" class="update-button">Update</button>
+                                </form>
+                            </td>
+                            <td>
+                                {% if menu.stok == 0 %}
+                                    <span class="status empty"><i></i> Habis</span>
+                                {% elif menu.stok <= 10 %}
+                                    <span class="status low"><i></i> Stok Rendah</span>
+                                {% else %}
+                                    <span class="status available"><i></i> Tersedia</span>
+                                {% endif %}
+                            </td>
+                            <td><a href="{{ url_for('hapus', id=menu.id) }}" class="delete-button" onclick="return confirm('Yakin ingin menghapus menu ini?')">Hapus</a></td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="7" class="empty-row">Belum ada menu. Tambahkan menu pertama Anda melalui formulir di atas.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="rekomendasi" class="panel recommendation-panel">
+            <div class="panel-heading">
+                <div><p class="eyebrow">SARAN MENU</p><h2>Menu yang Tersedia</h2><p class="panel-description">Menu berikut masih memiliki stok dan dapat ditawarkan.</p></div>
+                <span class="heading-icon">✦</span>
+            </div>
+            {% if rekomendasi %}
+            <div class="recommendation-list">
+                {% for menu in rekomendasi %}
+                <div class="recommendation-item">
+                    <div class="recommendation-symbol">{% if menu.kategori == "Makanan" %}🍱{% else %}🥤{% endif %}</div>
+                    <div class="recommendation-info"><strong>{{ menu.nama }}</strong><small>{{ menu.kategori }}</small></div>
+                    <div class="recommendation-price">Rp {{ "{:,.0f}".format(menu.harga).replace(",", ".") }}</div>
+                    <span class="status available"><i></i> Stok {{ menu.stok }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-row">Belum ada menu yang tersedia.</p>
+            {% endif %}
+        </section>
+
+        <footer class="footer">© 2026 Smart Kantin Planner <span>Dibuat untuk pengelolaan kantin yang lebih mudah.</span></footer>
+    </main>
+</body>
+</html>
